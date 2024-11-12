@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <title>分析結果</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f7f7f7;
+        }
+
+        h2 {
+            color: #091e34; 
+            margin-bottom: 20px;
+        }
+
+        .result-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .upload-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+           
+            width: 45%;
+        }
+
+        .button {
+            padding: 10px 20px;
+            font-size: 16px;
+            color: #fff;
+            background-color: #007bff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .button:hover {
+            background-color: #0056b3;
+        }
+
+        .high-freq-container {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .high-freq-select {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 45%;
+        }
+
+        select {
+            padding: 8px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        .wordcloud-container {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        margin-top: 20px;
+        }
+
+        .left-wordcloud, .right-wordcloud {
+        width: 48%;
+        text-align: center;
+        }
+
+        .left-wordcloud img, .right-wordcloud img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 10px;
+        }
+
+
+        /* 左右圖片區域容器 */
+        .image-container {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        /* 圖片放大區域 */
+        .image-zoom-container {
+            position: relative;
+            overflow: hidden;
+            width: 48%;
+        }
+
+        .pca-image {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ddd;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+
+        .zoom-lens {
+            position: absolute;
+            border: 2px solid #000;
+            width: 100px;
+            height: 100px;
+            visibility: hidden;
+            cursor: zoom-in;
+            background-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .zoom-result {
+            position: absolute;
+            top: 0;
+            left: 105%;  /* 將放大結果顯示在圖片右側 */
+            border: 1px solid #000;
+            width: 300px;
+            height: 300px;
+            overflow: hidden;
+            display: none;
+            z-index: 1;
+        }
+
+
+        .zoom-result img {
+            position: absolute;
+            width: 200%;
+            height: auto;
+        }
+        
+        .calcontainer {
+            padding: 20px;
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+        
+        .flex-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px; /* 控制元素之間的間距 */
+            margin-top: 20px;
+        }
+        .calresult {
+            
+            margin-top: 20px;
+            font-size: 18px;
+        }
+        .symbol {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 0 10px;
+        }
+        .calresult {
+            display: flex;
+            justify-content: space-between; /* 左右分佈 */
+            width: 400px; /* 可根據需要調整寬度 */
+        }
+        .result-left, .result-right {
+            font-size: 18px;
+            font-weight: bold;
+            width: 100%; /* 讓容器使用全部寬度 */
+        }
+
+
+    </style>
+</head>
+
+<body>
+    <div class="result-container">
+        <h2>分析結果</h2>
+
+
+        <!-- 模型上傳表單 -->
+        <div class="upload-container">
+            <form action="/upload_model" method="POST" enctype="multipart/form-data">
+                <input type="file" name="model_file" accept=".model">
+                <button type="submit" class="button">上傳模型</button>
+            </form>
+        </div>
+
+        <!-- 左右模型選擇和載入按鈕 -->
+        <div class="button-container">
+            <!-- 左側模型選擇和載入 -->
+            <div class="upload-container">
+                <form action="/load_model/left" method="POST">
+                    <label for="left_model">選擇模型</label>
+                    <select name="selected_model" id="left_model">
+                        <option value="">選擇模型...</option>
+                        {% for model in models %}
+                        <option value="{{ model }}" {% if model==selected_left_model %}selected{% endif %}>{{ model }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="button">載入模型</button>
+                </form>
+            </div>
+    
+            <!-- 右側模型選擇和載入 -->
+       
+            <div class="upload-container">
+                <form action="/load_model/right" method="POST">
+                    <label for="right_model">選擇模型</label>
+                    <select name="selected_model" id="right_model">
+                        <option value="">選擇模型...</option>
+                        {% for model in models %}
+                        <option value="{{ model }}" {% if model==selected_right_model %}selected{% endif %}>{{ model }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="button">載入模型</button>
+                </form>
+            </div>
+        </div>
+
+       <!-- 左右高頻詞下拉選單，並排顯示 -->
+    <div class="high-freq-container">
+        <div class="slider-container">
+            <!-- 左右拖動的滑桿 -->
+            <input type="range" id="position-slider" min="0" max="100" value="{{ slider_position }}" oninput="updateSliderAndSubmit(this.value)">
+        </div>
+
+        <div class="high-freq-select">
+            <label for="left_high_freq_words">高頻詞_50</label>
+            <form action="/generate_wordcloud/left" method="POST" id="left-form">
+                <select name="keyword" id="left_high_freq_words" onchange="document.getElementById('left-form').submit()">
+                    <option value="">選擇關鍵字...</option>
+                    {% for word in left_high_freq_words %}
+                        <option value="{{ word }}" {% if word == selected_left_keyword %}selected{% endif %}>{{ word }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
+
+        <div class="high-freq-select">
+            <label for="right_high_freq_words">高頻詞</label>
+            <form action="/generate_wordcloud/right" method="POST" id="right-form">
+                <select name="keyword" id="right_high_freq_words" onchange="document.getElementById('right-form').submit()">
+                    <option value="">選擇關鍵字...</option>
+                    {% for word in right_high_freq_words %}
+                        <option value="{{ word }}" {% if word == selected_right_keyword %}selected{% endif %}>{{ word }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
+    </div>
+
+
+    <div class="wordcloud-container">
+        <div class="left-wordcloud">
+            <h3>詞雲_TOP30</h3>
+            <img src="{{ left_wordcloud_url }}" alt="Left Word Cloud">
+        </div>
+        <div class="right-wordcloud">
+            <h3>詞雲_TOP30</h3>
+            <img src="{{ right_wordcloud_url }}" alt="Right Word Cloud" >
+        </div>
+    </div>
+
+
+    <div class="image-container">
+        <!-- 左側圖片和放大效果 -->
+        <div class="image-zoom-container" id="left-image-container">
+            <img src="{{ left_2D_url }}" alt="Left PCA Plot" class="pca-image" id="left-pca-image">
+            <div class="zoom-lens" id="left-zoom-lens"></div>
+            <div class="zoom-result" id="left-zoom-result">
+                <img src="{{ left_2D_url }}" alt="Zoomed Left PCA Plot" id="left-zoomed-image">
+            </div>
+        </div>
+
+        <!-- 右側圖片和放大效果 -->
+        <div class="image-zoom-container" id="right-image-container">
+            <img src="{{ right_2D_url }}" alt="Right PCA Plot" class="pca-image" id="right-pca-image">
+            <div class="zoom-lens" id="right-zoom-lens"></div>
+            <div class="zoom-result" id="right-zoom-result">
+                <img src="{{ right_2D_url }}" alt="Zoomed Right PCA Plot" id="right-zoomed-image">
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="calcontainer">
+        <h1>Word2Vec 詞語計算</h1>
+        <!-- 選擇三個詞語的下拉選單並排列成一行 -->
+          <!-- 自動提交表單來進行詞語計算 -->
+          <form action="/calculate_word" method="POST">
+            <div class="flex-row">
+                <!-- 第一個詞語選擇框 -->
+                <select name="word1" id="word1-select">
+                    <option value="">請選擇...</option>
+                    {% for word in session['all_words'] %}
+                        <option value="{{ word }}" {% if session['word1'] == word %}selected{% endif %}>{{ word }}</option>
+                    {% endfor %}
+                </select>
+
+                <!-- 符號：- -->
+                <span class="symbol">-</span>
+
+                <!-- 第二個詞語選擇框 -->
+                <select name="word2" id="word2-select">
+                    <option value="">請選擇...</option>
+                    {% for word in session['all_words'] %}
+                        <option value="{{ word }}" {% if session['word2'] == word %}selected{% endif %}>{{ word }}</option>
+                    {% endfor %}
+                </select>
+
+                <!-- 符號：+ -->
+                <span class="symbol">+</span>
+
+                <!-- 第三個詞語選擇框 -->
+                <select name="word3" id="word3-select" >
+                    <option value="">請選擇...</option>
+                    {% for word in session['all_words'] %}
+                        <option value="{{ word }}" {% if session['word3'] == word %}selected{% endif %}>{{ word }}</option>
+                    {% endfor %}
+                </select>
+
+                <!-- 符號：= -->
+                <span class="symbol">=</span>
+
+                <div class="calresult">
+                    <!-- 顯示左邊的結果 -->
+                    <div class="result-left">
+                        <h3>左邊模型計算</h3>
+                        {% if session['result_Normal_word'] and session['result_Normal_word']|length > 0 %}
+                            <strong>{{ session['result_Normal_word'] }}</strong>
+                        {% else %}
+                            <span>?</span>
+                        {% endif %}
+                    </div>
+                
+                    <!-- 顯示右邊的結果 -->
+                    <div class="result-right">
+                        <h3>右邊模型計算</h3>
+                        {% if session['result_Best_word'] and session['result_Best_word']|length > 1 %}
+                            <strong>{{ session['result_Best_word'] }}</strong>
+                        {% else %}
+                            <span>?</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- 提交按鈕 -->
+            <button type="submit"  class="button">計算結果</button>
+        </form>
+    </div>
+
+
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div>
+            {% for category, message in messages %}
+                <div class="flash-message {{ category }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    {% endwith %}
+
+        <a href="{{ url_for('index') }}" class="button">返回首頁</a>
+    </div>
+
+
+    <script>
+        // 當滑桿值發生變化時，動態更新下拉選單內容並自動提交表單
+        function updateSliderAndSubmit(value) {
+            fetch("/update_slider_position", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ position: value })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "success") {
+                     // 更新左側高頻詞下拉選單
+                    const leftHighFreqWords = document.getElementById("left_high_freq_words");
+                    leftHighFreqWords.innerHTML = '<option value="">選擇關鍵字...</option>';
+                    data.left_high_freq_words.forEach(word => {
+                        leftHighFreqWords.innerHTML += `<option value="${word}">${word}</option>`;
+                    });
+
+                    // 更新右側高頻詞下拉選單
+                    const rightHighFreqWords = document.getElementById("right_high_freq_words");
+                    rightHighFreqWords.innerHTML = '<option value="">選擇關鍵字...</option>';
+                    data.right_high_freq_words.forEach(word => {
+                        rightHighFreqWords.innerHTML += `<option value="${word}">${word}</option>`;
+                    });
+        
+                        // 自動提交表單
+                    document.getElementById('left-form').submit();
+                }
+            })
+            .catch(error => console.error("Error updating slider position:", error));
+        }
+    </script>
+    
+
+
+</body>
+
+</html>
